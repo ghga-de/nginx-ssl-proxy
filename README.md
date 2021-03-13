@@ -5,7 +5,7 @@ This image is indented for use in conjunction with the `datameta/certbot-proxy` 
 Example compose usage:
 
 ```yaml
-reverse-proxy
+reverse-proxy:
   image: "datameta/nginx-ssl-proxy:v1.0.0"
   volumes:
     - etc-le:/etc/letsencrypt      # Persistent volume for certificates

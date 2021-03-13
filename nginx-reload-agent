@@ -1,0 +1,37 @@
+#!/bin/bash
+
+trap 'kill -TERM $(jobs -p);exit' INT
+trap 'kill -TERM $(jobs -p);exit' TERM
+
+initsleeptime="10s"
+sleeptime=5
+
+# Give nginx a headstart to start up
+echo "nginx-reload-agent: Waiting $initsleeptime for nginx to start up before initializing relauch agent" >&2
+sleep "$initsleeptime" &
+wait
+
+while true
+do
+	# Check if LE certs are in place
+	if compgen -G "/etc/letsencrypt/live/*/fullchain.pem"
+	then
+		# Restart only every 6h to reload renewed certs
+		sleeptime="6h"
+		# Enable SSL if not yet enabled
+		if compgen -G "/etc/nginx/conf.d/*.sslonly"
+		then
+			echo "nginx-reload-agent: LE SSL Certificate detected. Enabling SSL specific configuration before nginx reload." >&2
+			mmv -dv '/etc/nginx/conf.d/*.sslonly' '/etc/nginx/conf.d/#1'
+		fi
+	else
+		echo "nginx-reload-agent: Waiting for LE certs." >&2
+	fi
+
+	# Reload nginx
+	nginx -s reload
+
+	# Wait for next rotation
+	sleep $sleeptime &
+	wait
+done

@@ -1,0 +1,11 @@
+#!/bin/bash
+trap 'kill -TERM $(jobs -p);exit' INT
+trap 'kill -TERM $(jobs -p);exit' TERM
+
+
+nginx-reload-agent &>/var/log/nginx-reload-agent.log &
+
+echo "Starting nginx"
+/docker-entrypoint.sh "$@" &>/var/log/nginx-wrapper.log &
+
+tail -qfn100 /var/log/nginx-wrapper.log /var/log/nginx-reload-agent.log
